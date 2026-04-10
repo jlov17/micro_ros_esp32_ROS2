@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>esp32_motor_control</name>
+  <version>0.0.1</version>
+  <description>ESP32 stepper motor control with ROS2</description>
+  <maintainer email="user@localhost">user</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <buildtool_depend>rosidl_cmake</buildtool_depend>
+
+  <rosidl_cmake>
+    <msg_interface_packages>
+      <build_depend>std_msgs</build_depend>
+      <exec_depend>std_msgs</exec_depend>
+    </msg_interface_packages>
+  </rosidl_cmake>
+</package>
