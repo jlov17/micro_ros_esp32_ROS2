@@ -1,0 +1,78 @@
+#include <Wire.h>
+#include <Arduino.h>
+#include <Wire.h>
+#include <micro_ros_platformio.h>
+#include <rcl/rcl.h>
+#include <rclc/rclc.h>
+#include <rclc/executor.h>
+#include <std_msgs/msg/float32_multi_array.h>
+
+const uint8_t TCA9548A_ADDR = 0x70;
+constexpr uint8_t NUM_SENSORS = 6;
+
+#define SDApin 8
+#define SCLpin 9
+
+const uint8_t PRE_SENSOR_ADDR = 0x28;
+const double  PRESSURE_MIN    = 0.0;
+const double  PRESSURE_MAX    = 60.0;
+const double  OUTPUT_MIN      = 1677722;
+const double  OUTPUT_MAX      = 15099494;
+
+void tcaSelect(uint8_t channel) {
+  if (channel > 7) return;
+  Wire.beginTransmission(TCA9548A_ADDR);
+  Wire.write(1 << channel);
+  Wire.endTransmission();
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+  Wire.begin(SDApin, SCLpin);
+  Wire.setClock(400000);
+  delay(10);
+
+  Serial.println("=== Pressure sensor test (channels 2-7) ===");
+}
+
+void loop() {
+  uint32_t t_start = millis();
+
+  uint8_t cmd[3] = {0xAA, 0x00, 0x00};
+  uint8_t data[4];
+  double readings[NUM_SENSORS];
+
+  for (uint8_t ch = 2; ch <= 7; ch++) {
+    tcaSelect(ch);
+
+    Wire.beginTransmission(PRE_SENSOR_ADDR);
+    Wire.write(cmd, 3);
+    Wire.endTransmission();
+
+    Wire.requestFrom(PRE_SENSOR_ADDR, (uint8_t)4);
+    for (int i = 0; i < 4; i++) {
+      data[i] = Wire.read();
+    }
+
+    double press_counts = (double)((int32_t)data[3] +
+                                   (int32_t)data[2] * 256 +
+                                   (int32_t)data[1] * 65536);
+
+    readings[ch - 2] = ((press_counts - OUTPUT_MIN) * (PRESSURE_MAX - PRESSURE_MIN)) /
+                        (OUTPUT_MAX - OUTPUT_MIN) + PRESSURE_MIN;
+  }
+
+  delay(5);
+
+  uint32_t loop_ms = millis() - t_start;
+
+  // print every single loop
+  Serial.print(loop_ms);
+  Serial.print("ms | kPa: [ ");
+  for (uint8_t i = 0; i < NUM_SENSORS; i++) {
+    Serial.print(readings[i], 1);
+    if (i < NUM_SENSORS - 1) Serial.print(", ");
+  }
+  Serial.println(" ]");
+}
